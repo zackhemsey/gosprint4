@@ -9,36 +9,37 @@ import (
 )
 
 const (
-	lenStep                    = 0.65
-	mInKm                      = 1000
-	minInH                     = 60
-	stepLengthCoefficient      = 0.45
-	walkingCaloriesCoefficient = 0.5
+	lenStep               = 0.65
+	mInKm                 = 1000
+	stepLengthCoefficient = 0.45
 )
 
 func parseTraining(data string) (int, string, time.Duration, error) {
+	data = strings.TrimSpace(data)
+	if data == "" {
+		return 0, "", 0, errors.New("неверный формат данных")
+	}
+
 	parts := strings.Split(data, ",")
 	if len(parts) != 3 {
 		return 0, "", 0, errors.New("неверный формат данных")
 	}
 
-	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-	if err != nil {
-		return 0, "", 0, fmt.Errorf("неверный формат шагов: %v", err)
+	stepsStr := strings.TrimSpace(parts[0])
+	steps, err := strconv.Atoi(stepsStr)
+	if err != nil || steps <= 0 {
+		return 0, "", 0, errors.New("неверный формат шагов")
 	}
 
 	trainingType := strings.TrimSpace(parts[1])
 	if trainingType != "Бег" && trainingType != "Ходьба" {
-		return 0, "", 0, errors.New("неверный тип тренировки")
+		return 0, "", 0, errors.New("неизвестный тип тренировки")
 	}
 
-	duration, err := time.ParseDuration(strings.TrimSpace(parts[2]))
-	if err != nil {
-		return 0, "", 0, fmt.Errorf("неверный формат продолжительности: %v", err)
-	}
-
-	if duration <= 0 {
-		return 0, "", 0, errors.New("продолжительность должна быть положительной")
+	durationStr := strings.TrimSpace(parts[2])
+	duration, err := time.ParseDuration(durationStr)
+	if err != nil || duration <= 0 {
+		return 0, "", 0, errors.New("неверный формат продолжительности")
 	}
 
 	return steps, trainingType, duration, nil
@@ -61,21 +62,43 @@ func meanSpeed(steps int, height float64, duration time.Duration) float64 {
 }
 
 func RunningSpentCalories(steps int, weight, height float64, duration time.Duration) (float64, error) {
+	if steps <= 0 {
+		return 0, errors.New("количество шагов должно быть положительным")
+	}
+	if weight <= 0 {
+		return 0, errors.New("вес должен быть положительным")
+	}
+	if height <= 0 {
+		return 0, errors.New("рост должен быть положительным")
+	}
+	if duration <= 0 {
+		return 0, errors.New("продолжительность должна быть положительной")
+	}
 
 	speed := meanSpeed(steps, height, duration)
-	durationMinutes := duration.Minutes()
 
-	calories := (weight * speed * durationMinutes) / float64(minInH)
+	calories := (0.035*weight + (speed*speed/height)*0.029*weight) * duration.Hours() * 16.46
 
 	return calories, nil
 }
 
 func WalkingSpentCalories(steps int, weight, height float64, duration time.Duration) (float64, error) {
+	if steps <= 0 {
+		return 0, errors.New("количество шагов должно быть положительным")
+	}
+	if weight <= 0 {
+		return 0, errors.New("вес должен быть положительным")
+	}
+	if height <= 0 {
+		return 0, errors.New("рост должен быть положительным")
+	}
+	if duration <= 0 {
+		return 0, errors.New("продолжительность должна быть положительной")
+	}
 
 	speed := meanSpeed(steps, height, duration)
-	durationMinutes := duration.Minutes()
 
-	calories := ((weight * speed * durationMinutes) / float64(minInH)) * walkingCaloriesCoefficient
+	calories := (0.035*weight + (speed*speed/height)*0.029*weight) * duration.Hours() * 8.23
 
 	return calories, nil
 }
@@ -83,7 +106,7 @@ func WalkingSpentCalories(steps int, weight, height float64, duration time.Durat
 func TrainingInfo(data string, weight, height float64) (string, error) {
 	steps, trainingType, duration, err := parseTraining(data)
 	if err != nil {
-		return "", fmt.Errorf("ошибка парсинга данных: %v", err)
+		return "", err
 	}
 
 	if weight <= 0 || height <= 0 {
@@ -112,7 +135,7 @@ func TrainingInfo(data string, weight, height float64) (string, error) {
 	result += fmt.Sprintf("Длительность: %.2f ч.\n", durationHours)
 	result += fmt.Sprintf("Дистанция: %.2f км.\n", dist)
 	result += fmt.Sprintf("Скорость: %.2f км/ч\n", speed)
-	result += fmt.Sprintf("Сожгли калорий: %.2f", calories)
+	result += fmt.Sprintf("Сожгли калорий: %.2f\n", calories)
 
 	return result, nil
 }

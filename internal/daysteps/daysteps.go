@@ -13,17 +13,35 @@ const (
 )
 
 func parsePackage(data string) (int, time.Duration, error) {
+	data = strings.TrimSpace(data)
+
+	if data == "" {
+		return 0, 0, fmt.Errorf("неверный формат данных")
+	}
+
 	parts := strings.Split(data, ",")
 	if len(parts) != 2 {
 		return 0, 0, fmt.Errorf("неверный формат данных")
 	}
 
-	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	stepsStr := strings.TrimSpace(parts[0])
+
+	if strings.Contains(parts[0], " ") && stepsStr != parts[0] {
+		return 0, 0, fmt.Errorf("неверный формат шагов")
+	}
+
+	steps, err := strconv.Atoi(stepsStr)
 	if err != nil || steps <= 0 {
 		return 0, 0, fmt.Errorf("неверный формат шагов")
 	}
 
-	duration, err := time.ParseDuration(strings.TrimSpace(parts[1]))
+	durationStr := strings.TrimSpace(parts[1])
+
+	if strings.Contains(parts[1], " ") && durationStr != parts[1] {
+		return 0, 0, fmt.Errorf("неверный формат продолжительности")
+	}
+
+	duration, err := time.ParseDuration(durationStr)
 	if err != nil || duration <= 0 {
 		return 0, 0, fmt.Errorf("неверный формат продолжительности")
 	}
@@ -45,12 +63,12 @@ func DayActionInfo(data string, weight, height float64) string {
 	distanceKm := distanceMeters / mInKm
 
 	hours := duration.Hours()
-	calories := 0.0
-	if hours > 0 {
 
-		calories = 0.5 * distanceKm * weight
-	}
+	speed := distanceKm / hours
+	calories := (0.035*weight + (speed*speed/height)*0.029*weight) * hours
 
-	return fmt.Sprintf("Количество шагов: %d.\nДистанция составила %.2f км.\nВы сожгли %.2f ккал.",
+	calories *= 16.46
+
+	return fmt.Sprintf("Количество шагов: %d.\nДистанция составила %.2f км.\nВы сожгли %.2f ккал.\n",
 		steps, distanceKm, calories)
 }
