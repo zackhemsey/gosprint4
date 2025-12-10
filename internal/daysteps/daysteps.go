@@ -16,34 +16,20 @@ const (
 	stepLength = 0.65   // длина шага в метрах
 )
 
-// parsePackage парсит строку с данными активности
 func parsePackage(data string) (int, time.Duration, error) {
-	if data == "" {
-		return 0, 0, errors.New("пустая строка данных")
-	}
-
 	parts := strings.Split(data, ",")
 	if len(parts) != 2 {
-		return 0, 0, errors.New("неверный формат данных: ожидается 'шаги,длительность'")
+		return 0, 0, errors.New("invalid data format: expected 'steps,duration'")
 	}
 
-	// Парсим шаги
-	stepsStr := strings.TrimSpace(parts[0])
-	if stepsStr == "" {
-		return 0, 0, errors.New("отсутствует количество шагов")
-	}
-
-	// Убираем возможный плюс в начале, но проверяем пробелы
-	stepsStr = strings.TrimPrefix(stepsStr, "+")
-
-	// Проверяем на пробелы внутри числа - это ошибка
-	if strings.ContainsAny(stepsStr, " \t\n") {
-		return 0, 0, errors.New("неверный формат количества шагов: пробелы в числе")
-	}
-
-	steps, err := strconv.Atoi(stepsStr)
+	// Парсим шаги сразу
+	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 	if err != nil {
-		return 0, 0, fmt.Errorf("неверный формат количества шагов: %w", err)
+		return 0, 0, fmt.Errorf("invalid steps: %w", err)
+	}
+
+	if steps <= 0 {
+		return 0, 0, errors.New("steps must be positive")
 	}
 
 	if steps <= 0 {
@@ -51,18 +37,13 @@ func parsePackage(data string) (int, time.Duration, error) {
 	}
 
 	// Парсим продолжительность
-	durationStr := strings.TrimSpace(parts[1])
-	if durationStr == "" {
-		return 0, 0, errors.New("отсутствует продолжительность")
-	}
-
-	duration, err := time.ParseDuration(durationStr)
+	duration, err := time.ParseDuration(strings.TrimSpace(parts[1]))
 	if err != nil {
-		return 0, 0, fmt.Errorf("неверный формат продолжительности: %w", err)
+		return 0, 0, fmt.Errorf("invalid duration format: %w", err)
 	}
 
 	if duration <= 0 {
-		return 0, 0, errors.New("продолжительность должна быть положительной")
+		return 0, 0, errors.New("duration must be positive")
 	}
 
 	return steps, duration, nil

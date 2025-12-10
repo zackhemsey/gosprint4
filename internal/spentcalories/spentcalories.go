@@ -18,10 +18,6 @@ const (
 
 // parseTraining парсит строку с данными тренировки
 func parseTraining(data string) (int, string, time.Duration, error) {
-	if data == "" {
-		return 0, "", 0, errors.New("пустая строка данных")
-	}
-
 	parts := strings.Split(data, ",")
 	if len(parts) != 3 {
 		return 0, "", 0, errors.New("неверный формат данных: ожидается 'шаги,тип,длительность'")
@@ -195,14 +191,14 @@ func TrainingInfo(data string, weight, height float64) (string, error) {
 	// В зависимости от типа тренировки вычисляем калории
 	switch trainingType {
 	case "Бег":
-		calories, calcErr = RunningSpentCalories(steps, weight, height, duration)
+		calories, err = RunningSpentCalories(steps, weight, height, duration)
 	case "Ходьба":
 		calories, calcErr = WalkingSpentCalories(steps, weight, height, duration)
 	default:
 		return "", errors.New("неизвестный тип тренировки")
 	}
 
-	if calcErr != nil {
+	if err != nil {
 		return "", calcErr
 	}
 
