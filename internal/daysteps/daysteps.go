@@ -22,8 +22,18 @@ func parsePackage(data string) (int, time.Duration, error) {
 		return 0, 0, errors.New("invalid data format: expected 'steps,duration'")
 	}
 
-	// Парсим шаги сразу
-	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	// НЕ используем TrimSpace сначала!
+	stepsStr := parts[0]
+
+	// Проверяем на пробелы ДО удаления
+	if strings.ContainsAny(stepsStr, " \t\n") {
+		return 0, 0, errors.New("неверный формат количества шагов: пробелы в числе")
+	}
+
+	// Теперь удаляем пробелы по краям
+	stepsStr = strings.TrimSpace(stepsStr)
+
+	steps, err := strconv.Atoi(stepsStr)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid steps: %w", err)
 	}
@@ -32,11 +42,7 @@ func parsePackage(data string) (int, time.Duration, error) {
 		return 0, 0, errors.New("steps must be positive")
 	}
 
-	if steps <= 0 {
-		return 0, 0, errors.New("количество шагов должно быть положительным")
-	}
-
-	// Парсим продолжительность
+	// Для продолжительности используем TrimSpace
 	duration, err := time.ParseDuration(strings.TrimSpace(parts[1]))
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid duration format: %w", err)

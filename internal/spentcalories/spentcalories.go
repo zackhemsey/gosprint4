@@ -20,50 +20,30 @@ const (
 func parseTraining(data string) (int, string, time.Duration, error) {
 	parts := strings.Split(data, ",")
 	if len(parts) != 3 {
-		return 0, "", 0, errors.New("неверный формат данных: ожидается 'шаги,тип,длительность'")
+		return 0, "", 0, errors.New("invalid data format: expected 'steps,type,duration'")
 	}
 
-	// Парсим шаги
-	stepsStr := strings.TrimSpace(parts[0])
-	if stepsStr == "" {
-		return 0, "", 0, errors.New("отсутствует количество шагов")
-	}
-
-	// Убираем возможный плюс в начале
-	stepsStr = strings.TrimPrefix(stepsStr, "+")
-
-	// Проверяем на пробелы внутри числа - это ошибка
-	if strings.ContainsAny(stepsStr, " \t\n") {
-		return 0, "", 0, errors.New("неверный формат количества шагов: пробелы в числе")
-	}
-
-	steps, err := strconv.Atoi(stepsStr)
+	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 	if err != nil {
-		return 0, "", 0, fmt.Errorf("неверный формат количества шагов: %w", err)
+		return 0, "", 0, fmt.Errorf("invalid steps: %w", err)
 	}
 
-	// ВАЖНО: здесь мы НЕ проверяем steps на положительность!
-	// Это проверяется позже в функциях TrainingInfo, RunningSpentCalories, WalkingSpentCalories
+	// ДОБАВЬТЕ ЭТУ ПРОВЕРКУ!
+	if steps <= 0 {
+		return 0, "", 0, errors.New("steps must be positive")
+	}
 
-	// Парсим тип тренировки
 	trainingType := strings.TrimSpace(parts[1])
-	if trainingType == "" {
-		return 0, "", 0, errors.New("отсутствует тип тренировки")
-	}
 
-	// Парсим продолжительность
-	durationStr := strings.TrimSpace(parts[2])
-	if durationStr == "" {
-		return 0, "", 0, errors.New("отсутствует продолжительность")
-	}
-
-	duration, err := time.ParseDuration(durationStr)
+	duration, err := time.ParseDuration(strings.TrimSpace(parts[2]))
 	if err != nil {
-		return 0, "", 0, fmt.Errorf("неверный формат продолжительности: %w", err)
+		return 0, "", 0, fmt.Errorf("invalid duration format: %w", err)
 	}
 
-	// ВАЖНО: здесь мы НЕ проверяем duration на положительность!
-	// Это проверяется позже в функциях TrainingInfo, RunningSpentCalories, WalkingSpentCalories
+	// ДОБАВЬТЕ ЭТУ ПРОВЕРКУ!
+	if duration <= 0 {
+		return 0, "", 0, errors.New("duration must be positive")
+	}
 
 	return steps, trainingType, duration, nil
 }
